@@ -25,6 +25,8 @@ Planejamento para evoluir o app até ser 100% personalizável e pronto para publ
 
 ## Sprint 1 — Editor visual de temas (prioridade máxima)
 
+**Status:** planejada. Plano em `docs/sprints/sprint-1-plano.md` (10 passos, critérios A1–A13). Próxima: execução pelo Developer, pelo passo 0 (AGENTS.md e ONDE-PARAMOS.md).
+
 **Objetivo:** criar e editar dashboards na interface, sem mexer em JSON. Resolve os pedidos 1, 2, 3 e 4.
 
 - [ ] Canvas WYSIWYG (QGraphicsView) mostrando o tema renderizado ao vivo.

@@ -35,9 +35,9 @@ Atualizado em 2026-11-25.
 
 ## Pendências
 
-Detalhamento e ordem em `ROADMAP-SPRINTS.md`.
+Detalhamento e ordem em `ROADMAP-SPRINTS.md`. Plano da próxima sprint: `docs/sprints/sprint-1-plano.md` (planejada, aguardando Developer).
 
-- **Editor visual de temas** (prioridade): arrastar widgets, escolher imagem/cor de fundo,
+- **Editor visual de temas** (prioridade, Sprint 1): arrastar widgets, escolher imagem/cor de fundo,
   editar propriedades, criar dashboards, remover unidade duplicada do "%".
 - Corrigir temas do fornecedor com texto já presente na arte (ex: "%").
 - Recriar o restante dos temas do fornecedor (~35, imagens já extraídas).
