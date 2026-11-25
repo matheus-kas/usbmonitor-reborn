@@ -1,0 +1,5 @@
+pyserial>=3.5
+pillow>=10
+psutil>=6
+nvidia-ml-py>=12
+PySide6>=6.6

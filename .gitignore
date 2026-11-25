@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# App
+.DS_Store
+Thumbs.db
+
+# mantem artes e previews versionados; ignora saidas temporarias
+*.log
