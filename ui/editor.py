@@ -271,6 +271,8 @@ class EditorDialog(QDialog):
         btn_save = QPushButton("Salvar")
         btn_save.setObjectName("primary")
         btn_save.clicked.connect(self.save)
+        btn_save_as = QPushButton("Salvar como novo")
+        btn_save_as.clicked.connect(self.save_as_new)
         btn_cancel = QPushButton("Cancelar")
         btn_cancel.clicked.connect(self.reject)
 
@@ -299,6 +301,7 @@ class EditorDialog(QDialog):
         row2 = QHBoxLayout()
         row2.addStretch()
         row2.addWidget(btn_cancel)
+        row2.addWidget(btn_save_as)
         row2.addWidget(btn_save)
         right.addLayout(row2)
 
@@ -390,21 +393,38 @@ class EditorDialog(QDialog):
             self.canvas.refresh()
 
     # ---- salvar --------------------------------------------------------
+    def save_as_new(self) -> bool:
+        """Grava uma copia com o nome digitado; o tema original fica como esta."""
+        previous = self.original_name
+        self.original_name = None
+        ok = self.save()
+        if not ok:
+            self.original_name = previous
+        return ok
+
     def save(self) -> bool:
-        """Grava em themes/. Recusa nome vazio, invalido ou de outro tema existente."""
+        """Grava em themes/. Recusa nome vazio, invalido ou de outro tema existente.
+
+        So altera `self.theme.name` quando a gravacao der certo.
+        """
         name = self.name_edit.text()
         try:
             if self.original_name is None:
-                self.theme.name = name
-                ed.save_theme(self.theme)
+                tmp = copy.deepcopy(self.theme)
+                tmp.name = name
+                ed.save_theme(tmp)
             elif name.strip() != self.original_name:
-                ed.rename_theme(self.theme, name)
+                tmp = copy.deepcopy(self.theme)
+                tmp.name = self.original_name
+                ed.rename_theme(tmp, name)
             else:
-                ed.save_theme(self.theme, overwrite=True)
+                tmp = copy.deepcopy(self.theme)
+                tmp.name = self.original_name
+                ed.save_theme(tmp, overwrite=True)
         except ed.EditorError as exc:
-            self.theme.name = self.original_name or self.theme.name
             self.msg.setText(str(exc))
             return False
-        self.saved_name = self.theme.name
+        self.theme.name = tmp.name
+        self.saved_name = tmp.name
         self.accept()
         return True

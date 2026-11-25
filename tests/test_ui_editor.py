@@ -183,3 +183,27 @@ def test_editar_nao_altera_original_se_cancelar(app, themes_dir):
     d.canvas.commit_move(0, 50, 50)
     d.reject()
     assert store.load_theme("Orig").widgets[0].x == 40
+
+
+def test_salvar_como_novo_mantem_original(app, themes_dir):
+    ed.save_theme(ed.new_theme("Base", tema()))
+    d = EditorDialog(store.load_theme("Base"), original_name="Base")
+    d.name_edit.setText("Copia")
+    assert d.save_as_new() and d.saved_name == "Copia"
+    assert store.load_theme("Base").name == "Base"
+    assert store.load_theme("Copia").name == "Copia"
+
+
+def test_salvar_como_novo_com_mesmo_nome_e_recusado(app, themes_dir):
+    ed.save_theme(ed.new_theme("Base", tema()))
+    d = EditorDialog(store.load_theme("Base"), original_name="Base")
+    assert d.save_as_new() is False and d.original_name == "Base"
+
+
+def test_falha_ao_salvar_nao_muda_nome_do_tema(app, themes_dir):
+    ed.save_theme(ed.new_theme("A", tema()))
+    ed.save_theme(ed.new_theme("B", tema()))
+    d = EditorDialog(store.load_theme("B"), original_name="B")
+    d.name_edit.setText("A")
+    assert d.save() is False
+    assert d.theme.name == "B" and (themes_dir / "B.json").exists()

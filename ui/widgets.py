@@ -30,10 +30,20 @@ def pil_to_qpixmap(img: Image.Image) -> QPixmap:
     return QPixmap.fromImage(qimg.copy())
 
 
+def _preview_stale(preview: Path, name: str) -> bool:
+    """Preview salvo mais antigo que o JSON do tema: o tema foi editado, renderiza na hora."""
+    from core.theme_store import THEMES_DIR
+    src = THEMES_DIR / f"{name}.json"
+    try:
+        return src.stat().st_mtime > preview.stat().st_mtime
+    except OSError:
+        return False
+
+
 def theme_thumbnail(theme, width: int = 200) -> QPixmap:
     """Miniatura de um tema: usa o preview salvo ou renderiza na hora."""
     preview = PREVIEWS / f"{theme.name}.png"
-    if preview.exists():
+    if preview.exists() and not _preview_stale(preview, theme.name):
         pix = QPixmap(str(preview))
     else:
         pix = pil_to_qpixmap(Renderer(theme).render(_DEMO))

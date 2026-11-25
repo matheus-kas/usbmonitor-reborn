@@ -16,9 +16,11 @@ from PySide6.QtWidgets import (
 from core import autostart
 from core.engine import DisplayEngine
 from core.sensors import available_disks, available_adapters
-from core.theme import default_theme
+from core import editor as theme_editor
+from core.theme import Theme, default_theme
 from core.theme_store import THEMES_DIR, list_themes, load_theme
 from driver.turing_screen import Orientation, find_com_port
+from ui.editor import EditorDialog
 from ui.widgets import ThemeGallery, pil_to_qpixmap
 
 ORIENTATIONS = {
@@ -127,6 +129,14 @@ class MainWindow(QMainWindow):
         self.gallery = ThemeGallery(columns=2)
         self.gallery.theme_selected.connect(self._change_theme)
         right.addWidget(self.gallery, 1)
+        gal_btns = QHBoxLayout()
+        self.btn_new_theme = QPushButton("Novo tema")
+        self.btn_new_theme.clicked.connect(self._new_theme)
+        self.btn_edit_theme = QPushButton("Editar")
+        self.btn_edit_theme.clicked.connect(self._edit_theme)
+        gal_btns.addWidget(self.btn_new_theme)
+        gal_btns.addWidget(self.btn_edit_theme)
+        right.addLayout(gal_btns)
 
         disp = QGroupBox("Tela")
         dl = QVBoxLayout(disp)
@@ -294,6 +304,29 @@ class MainWindow(QMainWindow):
         self.gallery.select(name)
         if self.engine.screen is None:
             self._preview_offline()
+
+    # ---- editor de temas -----------------------------------------------
+    def _unique_theme_name(self) -> str:
+        n, i = "Novo tema", 2
+        while theme_editor.theme_path(n).exists():
+            n, i = f"Novo tema {i}", i + 1
+        return n
+
+    def _new_theme(self) -> None:
+        self._open_editor(Theme(name=self._unique_theme_name()), None)
+
+    def _edit_theme(self) -> None:
+        self._open_editor(self.theme, self.theme.name)
+
+    def _open_editor(self, theme: Theme, original_name: str | None) -> str | None:
+        """Abre o editor; se o usuario salvar, recarrega a galeria e aplica o tema."""
+        dlg = EditorDialog(theme, original_name, self)
+        dlg.exec()
+        name = dlg.saved_name
+        if name:
+            self._reload_gallery()
+            self._change_theme(name)
+        return name
 
     def _toggle_autostart(self, enabled: bool) -> None:
         try:
