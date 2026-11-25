@@ -170,10 +170,11 @@ def magic_blue() -> Theme:
               background_image="assets/backgrounds/LandscapeMagicBlue_0_480x320.png")
     W = t.widgets
     # NETWORK (topo esquerdo)
-    W.append(_val(118, 68, "net_up_kbps", "#59E0FF", unit=" M", fmt="{:.0f}",
-                  size=18, bold=True))
-    W.append(_val(118, 92, "net_down_kbps", "#59E0FF", unit=" M", fmt="{:.0f}",
-                  size=18, bold=True))
+    # a arte ja traz o "M" da unidade: sem unit, valor alinhado a direita antes dele
+    for y, fld in ((59, "net_up_kbps"), (81, "net_down_kbps")):
+        w = _val(106, y, fld, "#59E0FF", unit="", fmt="{:.0f}", size=18, bold=True)
+        w.align = "right"
+        W.append(w)
     # caixas brancas (CPU nome/uso e GPU uso)
     W.append(_val(50, 130, "cpu_percent", "#04121F", unit="%", size=20))
     W.append(_val(430, 130, "gpu_percent", "#04121F", unit="%", size=20))
@@ -198,7 +199,10 @@ def nzxt() -> Theme:
     W.append(_val(135, 50, "cpu_percent", "#FFFFFF", unit="%", size=22))
     W.append(_val(315, 50, "gpu_percent", "#FFFFFF", unit="%", size=22))
     # linha 2: RAM (card esq) | SSD/disco (card dir)
-    W.append(_val(138, 150, "ram_percent", "#FFFFFF", unit="%", size=22))
+    # a arte do card de RAM ja traz o "%": sem unit, valor alinhado a direita antes dele
+    ram = _val(112, 150, "ram_percent", "#FFFFFF", unit="", size=22)
+    ram.align = "right"
+    W.append(ram)
     W.append(_val(318, 150, "disk_percent", "#FFFFFF", unit="%", size=22))
     # linha 3: UP (card esq) | DOWN (card dir)
     W.append(_val(118, 250, "net_up_kbps", "#FFFFFF", unit=" KB/s", fmt="{:.0f}",

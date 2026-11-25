@@ -38,3 +38,15 @@ def test_temas_reais_carregam_sem_alterar():
     assert arquivos
     for a in arquivos:
         assert isinstance(Theme.load(a), Theme)
+
+
+def test_temas_do_fornecedor_sem_unidade_duplicada_na_arte():
+    """Passo 8 (A10): a arte ja traz o "%" do RAM (NZXT) e o "M" da rede (MagicBlue)."""
+    from pathlib import Path
+    pasta = Path(__file__).resolve().parent.parent / "themes"
+    nzxt = Theme.load(pasta / "NZXT.json")
+    ram = [w for w in nzxt.widgets if w.field == "ram_percent"][0]
+    assert ram.unit == ""
+    mb = Theme.load(pasta / "MagicBlue.json")
+    rede = [w for w in mb.widgets if w.field in ("net_up_kbps", "net_down_kbps")]
+    assert len(rede) == 2 and all(w.unit == "" for w in rede)
