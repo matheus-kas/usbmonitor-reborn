@@ -23,7 +23,6 @@ ALIGNS = ("left", "center", "right")
 SENSOR_FIELDS = tuple(f.name for f in fields(Reading) if f.name != "extra")
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp"}
 _COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
-_BAD_NAME_RE = re.compile(r'[\\/:*?"<>|]')
 
 
 class EditorError(ValueError):
@@ -140,7 +139,12 @@ def validate_property(name: str, value):
 def set_property(theme: Theme, idx: int, name: str, value) -> None:
     """Valida e aplica; valor invalido nao altera o tema."""
     _check_index(theme, idx)
-    setattr(theme.widgets[idx], name, validate_property(name, value))
+    v = validate_property(name, value)
+    if name == "x" and v > theme.width:
+        raise EditorError(f"x: maximo {theme.width} (largura do tema).")
+    if name == "y" and v > theme.height:
+        raise EditorError(f"y: maximo {theme.height} (altura do tema).")
+    setattr(theme.widgets[idx], name, v)
 
 
 # ---- temas: nome, arquivo -----------------------------------------------
@@ -148,13 +152,14 @@ def validate_theme_name(name: str) -> str:
     n = (name or "").strip()
     if not n:
         raise EditorError("O nome do tema nao pode ser vazio.")
-    if _BAD_NAME_RE.search(n) or n in (".", "..") or n.endswith("."):
-        raise EditorError("O nome do tema tem caracteres invalidos.")
+    if not store.is_safe_name(n):
+        raise EditorError("Nome de tema invalido (caracteres proibidos ou nome reservado do Windows).")
     return n
 
 
 def theme_path(name: str) -> Path:
-    return store.THEMES_DIR / f"{name}.json"
+    """Caminho themes/<nome>.json; recusa nome que saia da pasta."""
+    return store.THEMES_DIR / f"{validate_theme_name(name)}.json"
 
 
 def new_theme(name: str, base: Theme | None = None) -> Theme:
@@ -183,14 +188,29 @@ def rename_theme(theme: Theme, new_name: str) -> Path:
     """Troca nome e arquivo juntos. Recusa nome existente; nao sobrescreve outro tema."""
     n = validate_theme_name(new_name)
     old_name = theme.name
-    old = theme_path(old_name)
-    if n != old_name and theme_path(n).exists():
+    old = theme_path(old_name)          # valida o nome antigo: nada fora de themes/
+    same_file = n.casefold() == old_name.casefold()   # Windows: Meu -> meu e o mesmo arquivo
+    if not same_file and theme_path(n).exists():
         raise EditorError(f"Ja existe um tema chamado {n!r}.")
     theme.name = n
+    if same_file and old.exists():
+        old.unlink()                    # recria com a nova capitalizacao
     path = save_theme(theme, overwrite=True)
-    if old.exists() and old != path:
+    if not same_file and old.exists():
         old.unlink()
     return path
+
+
+def import_theme_file(src: str | Path) -> Theme:
+    """Importa um JSON para themes/ com nome = nome do arquivo. Recusa se ja existir."""
+    src = Path(src)
+    try:
+        t = Theme.load(src)
+    except Exception as exc:
+        raise EditorError(f"Arquivo de tema invalido: {exc}") from None
+    t.name = src.stem
+    save_theme(t)       # recusa nome existente e nome invalido
+    return t
 
 
 # ---- fundo --------------------------------------------------------------

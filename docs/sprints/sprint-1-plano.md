@@ -157,3 +157,16 @@ recomendação, mas não faz `git init` antes da resposta à pergunta 1.
 - Não altere `driver/`. Não escreva em `themes/` ou `assets/` a partir de teste.
 - Não faça commit: entregue o diff e avise o Reviewer.
 - Se precisar mudar o escopo no meio (ex.: exigir mudança de formato de JSON), volte ao Planner.
+
+## 12. Desvios registrados pelo Developer (rodada de revisao)
+
+- **Passo 8:** alem de zerar `unit`, foram alterados `x`, `align` (RAM do NZXT; rede do MagicBlue)
+  e `y` (rede do MagicBlue), tambem em `core/theme_presets.py`, a fonte dos temas. Sem isso o
+  valor ficaria sobre a arte. Aceito pelo Planner; o critério "diff mostra so `unit`" passa a ser
+  "diff mostra so `unit`, `x`, `y` e `align` dos widgets afetados". Sem mudanca de formato do JSON.
+- **Correcoes da revisao (Reviewer, Change Reviewer, Security Reviewer):** nome do tema = nome do
+  arquivo agora e imposto no carregamento (`theme_store`); importar tema recusa nome existente e
+  usa o nome do arquivo; nomes reservados do Windows e caminhos no nome sao recusados; renomear so
+  a capitalizacao funciona; x/y do painel limitados ao quadro; fundo so dentro de `assets/`;
+  `fmt` malformado no JSON cai no padrao; `psutil` simulado em todos os testes.
+- **Fora desta sprint (backlog Sprint 2):** "M" da RAM/GPU RAM no MagicBlue e "°" nos cards do NZXT.

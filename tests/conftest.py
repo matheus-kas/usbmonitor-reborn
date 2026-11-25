@@ -37,6 +37,74 @@ def reais_intactos():
     assert antes == depois, "teste alterou themes/ ou assets/ reais"
 
 
+class _FakePsutil:
+    """psutil simulado e deterministico; registra as chamadas em `calls`."""
+
+    def __init__(self):
+        self.calls = []
+
+    def _n(self, nome):
+        self.calls.append(nome)
+
+    def cpu_percent(self, interval=None):
+        self._n("cpu_percent")
+        return 12.0
+
+    def cpu_freq(self):
+        self._n("cpu_freq")
+        return None
+
+    def virtual_memory(self):
+        self._n("virtual_memory")
+        return types.SimpleNamespace(percent=40.0, total=16e9, available=10e9)
+
+    def disk_usage(self, path):
+        self._n("disk_usage")
+        return types.SimpleNamespace(percent=50.0, used=5e11, total=1e12)
+
+    def boot_time(self):
+        import time
+        self._n("boot_time")
+        return time.time() - 3600
+
+    def sensors_temperatures(self):
+        self._n("sensors_temperatures")
+        return {}
+
+    def disk_partitions(self, all=False):
+        self._n("disk_partitions")
+        return [types.SimpleNamespace(mountpoint="C:\\")]
+
+    def net_if_stats(self):
+        self._n("net_if_stats")
+        return {"Ethernet": types.SimpleNamespace(isup=True)}
+
+    def net_io_counters(self, pernic=False):
+        self._n("net_io_counters")
+        c = types.SimpleNamespace(bytes_sent=0, bytes_recv=0)
+        return {"Ethernet": c} if pernic else c
+
+
+@pytest.fixture(autouse=True)
+def psutil_simulado(monkeypatch):
+    """Nenhum teste chama o psutil real: core.sensors usa o falso e o real levanta erro."""
+    import psutil
+    import core.sensors as sensors
+    fake = _FakePsutil()
+    monkeypatch.setattr(sensors, "psutil", fake)
+
+    def _proibido(nome):
+        def _f(*a, **k):
+            raise AssertionError(f"psutil real chamado em teste: {nome}")
+        return _f
+
+    for nome in ("cpu_percent", "cpu_freq", "virtual_memory", "disk_usage", "boot_time",
+                 "sensors_temperatures", "disk_partitions", "net_if_stats",
+                 "net_io_counters"):
+        monkeypatch.setattr(psutil, nome, _proibido(nome), raising=False)
+    return fake
+
+
 @pytest.fixture
 def themes_dir(tmp_path, monkeypatch):
     """Redireciona o catalogo de temas para um diretorio temporario."""

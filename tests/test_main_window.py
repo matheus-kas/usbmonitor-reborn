@@ -70,3 +70,24 @@ def test_cancelar_nao_muda_galeria(janela, monkeypatch):
     monkeypatch.setattr(mw.EditorDialog, "exec", lambda self: 0)
     janela._new_theme()
     assert set(janela.gallery._cards) == antes
+
+
+def test_importar_nao_sobrescreve_tema_existente(janela, monkeypatch, tmp_path):
+    import ui.main_window as mw
+    ed.save_theme(ed.new_theme("Existente", Theme(widgets=[Widget(type="label", label="x")])))
+    src = tmp_path / "Existente.json"
+    Theme(name="Existente", background_color="#010101").save(src)
+    avisos = []
+    monkeypatch.setattr(mw.QFileDialog, "getOpenFileName", lambda *a, **k: (str(src), ""))
+    monkeypatch.setattr(mw.QMessageBox, "warning", lambda *a, **k: avisos.append(a[2]))
+    janela._import_theme()
+    assert avisos and len(store.load_theme("Existente").widgets) == 1
+
+
+def test_importar_novo_tema_entra_na_galeria_com_nome_do_arquivo(janela, monkeypatch, tmp_path):
+    import ui.main_window as mw
+    src = tmp_path / "De Fora.json"
+    Theme(name="outro nome").save(src)
+    monkeypatch.setattr(mw.QFileDialog, "getOpenFileName", lambda *a, **k: (str(src), ""))
+    janela._import_theme()
+    assert "De Fora" in janela.gallery._cards and "outro nome" not in janela.gallery._cards

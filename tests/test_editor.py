@@ -195,3 +195,74 @@ def test_cor_de_fundo():
     assert t.background_color == "#ABCDEF"
     with pytest.raises(ed.EditorError):
         ed.set_background_color(t, "azul")
+
+
+# ---- correcoes da revisao ---------------------------------------------------
+def test_renomear_so_capitalizacao(themes_dir):
+    t = ed.new_theme("Meu", tema())
+    ed.save_theme(t)
+    ed.rename_theme(t, "meu")
+    nomes = [p.name for p in themes_dir.glob("*.json")]
+    assert nomes == ["meu.json"] and store.load_theme("meu").name == "meu"
+
+
+@pytest.mark.parametrize("nome", ["CON", "nul", "Aux", "COM1", "lpt9", "con.txt"])
+def test_nome_reservado_do_windows_recusado(themes_dir, nome):
+    with pytest.raises(ed.EditorError):
+        ed.new_theme(nome)
+
+
+def test_renomear_tema_com_nome_antigo_malicioso_nao_apaga_fora(themes_dir):
+    fora = themes_dir.parent / "outside.json"
+    fora.write_text("{}")
+    t = Theme(name=r"..\outside")
+    with pytest.raises(ed.EditorError):
+        ed.rename_theme(t, "Novo")
+    assert fora.exists() and not (themes_dir / "Novo.json").exists()
+
+
+def test_x_y_acima_do_quadro_recusado():
+    t = tema()
+    with pytest.raises(ed.EditorError):
+        ed.set_property(t, 0, "x", 1500)
+    with pytest.raises(ed.EditorError):
+        ed.set_property(t, 0, "y", t.height + 1)
+    ed.set_property(t, 0, "x", t.width)
+    assert t.widgets[0].x == t.width
+
+
+def test_importar_tema_usa_nome_do_arquivo(themes_dir, tmp_path):
+    src = tmp_path / "Importado.json"
+    Theme(name="Outro nome", widgets=[Widget(type="label", label="a")]).save(src)
+    t = ed.import_theme_file(src)
+    assert t.name == "Importado" and (themes_dir / "Importado.json").exists()
+    assert store.load_theme("Importado").name == "Importado"
+
+
+def test_importar_tema_nao_sobrescreve_existente(themes_dir, tmp_path):
+    ed.save_theme(ed.new_theme("NZXT", tema()))
+    src = tmp_path / "NZXT.json"
+    Theme(name="NZXT", background_color="#010101").save(src)
+    with pytest.raises(ed.EditorError):
+        ed.import_theme_file(src)
+    assert len(store.load_theme("NZXT").widgets) == 3
+
+
+def test_importar_json_invalido_recusado(themes_dir, tmp_path):
+    src = tmp_path / "ruim.json"
+    src.write_text("{nao e json")
+    with pytest.raises(ed.EditorError):
+        ed.import_theme_file(src)
+
+
+def test_fundo_fora_de_assets_nao_e_resolvido(tmp_path):
+    from core.renderer import _resolve_bg
+    for caminho in (str(tmp_path / "x.png"), "../fora.png", r"C:\Windows\win.ini"):
+        with pytest.raises(ValueError):
+            _resolve_bg(caminho)
+    assert _resolve_bg("assets/backgrounds/NZXT_BLUR_0_480x320.png").name.startswith("NZXT")
+
+
+def test_fmt_malformado_no_json_vira_padrao():
+    t = Theme.from_dict({"widgets": [{"type": "text", "fmt": "{:q}"}]})
+    assert t.widgets[0].fmt == "{:.0f}"

@@ -13,8 +13,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _resolve_bg(path: str) -> Path:
-    p = Path(path)
-    return p if p.is_absolute() else (PROJECT_ROOT / p)
+    """Caminho do fundo; so aceita arquivos dentro de assets/ do projeto."""
+    p = (PROJECT_ROOT / path).resolve()      # caminho absoluto no JSON substitui a base
+    if not p.is_relative_to((PROJECT_ROOT / "assets").resolve()):
+        raise ValueError("fundo fora de assets/")
+    return p
 
 
 @lru_cache(maxsize=64)

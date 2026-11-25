@@ -370,12 +370,15 @@ class MainWindow(QMainWindow):
     def _import_theme(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self, "Importar tema", str(THEMES_DIR), "JSON (*.json)")
-        if path:
-            dest = THEMES_DIR / Path(path).name
-            if Path(path) != dest:
-                dest.write_text(Path(path).read_text(encoding="utf-8"),
-                                encoding="utf-8")
-            self._reload_gallery()
+        if not path:
+            return
+        try:
+            if Path(path).resolve().parent != THEMES_DIR.resolve():
+                theme_editor.import_theme_file(path)
+        except theme_editor.EditorError as exc:
+            QMessageBox.warning(self, "Importar tema", str(exc))
+            return
+        self._reload_gallery()
 
     def _open_themes_folder(self) -> None:
         import os

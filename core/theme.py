@@ -52,6 +52,11 @@ class Theme:
     @classmethod
     def from_dict(cls, d: dict) -> "Theme":
         widgets = [Widget(**w) for w in d.get("widgets", [])]
+        for w in widgets:
+            try:
+                w.fmt.format(1.0)
+            except Exception:           # fmt malformado no JSON: usa o padrao
+                w.fmt = "{:.0f}"
         base = {k: v for k, v in d.items() if k != "widgets"}
         return cls(widgets=widgets, **base)
 
